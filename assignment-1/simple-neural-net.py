@@ -3,33 +3,55 @@ import matplotlib.pyplot as plt
 import torch
 from torch.autograd import Variable
 
-def cosine(theta1, theta2, step_size):
-    X = np.arange(theta1, theta2, step_size)
-    return X, np.cos(X)
+dtype = torch.DoubleTensor
 
-def plot_data(data, color):
-    plt.scatter(data[0], data[1], s=5, marker='.', c=color)
+# Create input and output data from
+x = torch.from_numpy(np.arange(-np.pi, np.pi, 0.01).reshape(-1,1))
+y = np.cos(x)
 
-def show_plot():
-    plt.show()
+# N is batch size; D_in is input dimension;
+# H is hidden dimension; D_out is output dimension.
+N, D_in, H, D_out = x.shape[0], 1, 10, 1
 
-class NeuralNetwork():
-    def __init__(self):
-        dtype = torch.FloatTensor
-        D_in, H, D_out = 1, 10, 1
-        self.w1 = Variable(torch.randn(D_in, H).type(dtype), requires_grad=True)
-        self.w2 = Variable(torch.randn(H, D_out).type(dtype), requires_grad=True)
-        self.learning_rate = 1e-6
+# Create plot for original function
+plt.scatter(x.numpy(), y.numpy(), s=5, marker='.', c='blue')
 
-    def forward(self, X):
-        z2 = X.mm(self.w1).clamp(min=0)
-        a2 = Variable(torch.from_numpy(np.tanh(z2.data.numpy())), requires_grad=True)
-        y_pred = a2.mm(self.w2)
-        return y_pred
+# Randomly initialize weights
+w1 = torch.randn(D_in, H).type(dtype)
+w2 = torch.randn(H, D_out).type(dtype)
 
-    def get_loss(self, y_pred, Y):
-        return np.square(y_pred - y).sum()
+# Create plot for predicted function before training
+h = x.mm(w1)
+h_act = np.tanh(h)
+y_pred = h_act.mm(w2)
+plt.scatter(x.numpy(), y_pred.numpy(), s=5, marker='.', c='green')
 
-if __name__ == '__main__':
-    plot_data(cosine(-np.pi, np.pi, 0.01), 'blue')
-    show_plot()
+# learning weights
+learning_rate = 1e-6
+for t in range(10000):
+    # Forward pass: compute predicted y
+    h = x.mm(w1)
+    h_act = np.tanh(h)
+    y_pred = h_act.mm(w2)
+
+    # Compute loss
+    loss = (y_pred - y).pow(2).sum()
+
+    # Backprop to compute gradients of w1 and w2 with respect to loss
+    grad_y_pred = 2.0 * (y_pred - y)
+    grad_w2 = h_act.t().mm(grad_y_pred)
+    grad_h_act = grad_y_pred.mm(w2.t())
+    grad_h = grad_h_act.clone()
+    grad_h[h < 0] = 0
+    grad_w1 = x.t().mm(grad_h)
+
+    # Update weights using gradient descent
+    w1 -= learning_rate * grad_w1
+    w2 -= learning_rate * grad_w2
+
+# Create plot for predicted function after training
+h = x.mm(w1)
+h_act = np.tanh(h)
+y_pred = h_act.mm(w2)
+plt.scatter(x.numpy(), y_pred.numpy(), s=5, marker='.', c='red')
+plt.show()
