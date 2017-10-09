@@ -1,5 +1,14 @@
-import cv2, os, copy
+import cv2, os, copy, random
 import numpy as np
+
+# generates 3 random numbers from 0 to n-1
+def generateRandomNums(n):
+    result = set()
+    while len(result) < 3:
+        m = random.randrange(n)
+        if not m in result:
+            result.add(m)
+    return list(result)
 
 # reading input images and saving them respectively to image1 and image2
 image1  = cv2.imread('res/scene.pgm')
@@ -50,3 +59,33 @@ file_3 = 'out/feature_matching.jpg'
 if not os.path.isfile(file_3):
     print('writing imageWithMatches with keypoints at path:'+file_3)
     cv2.imwrite(file_3, imageWithMatches)
+
+# RANSAC
+N = 100
+P = 3
+for i in range(N):
+    x, y, z = generateRandomNums(len(result_matches))
+    print(x, y, z)
+    P_matches = [result_matches[x], result_matches[y], result_matches[z]]
+
+    #Matrix Construction  A and b
+    A = np.zeros(shape=(6,6))
+    b = np.zeros(shape=(6,1))
+    for i in range(P):
+        kp1, kp2 = P_matches[i]
+        A[2*i][0]=kp1[0]
+        A[2*i][1]=kp1[1]
+        A[2*i][4]=1
+        A[2*i+1][2]=kp1[0]
+        A[2*i+1][3]=kp1[1]
+        A[2*i+1][5]=1
+        b[2*i][0]=kp2[0]
+        b[2*i+1][0]=kp2[1]
+
+    # Solving A,b using linear algebra api, q is the resultant transformation matrix
+    try:
+        q = np.linalg.solve(A,b)
+    except np.linalg.LinAlgError: #if A is singular
+        continue
+
+    # print(q)
