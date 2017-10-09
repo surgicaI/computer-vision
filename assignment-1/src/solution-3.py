@@ -1,6 +1,23 @@
 import numpy as np
 import os
 
+def verify(X, P, x):
+    threshold = 1e-5
+    for i in range(X.shape[0]):
+        vec = list(X[i])
+        vec.append(1)
+        vec = np.array(vec).reshape(4,1)
+        calculated = P.dot(vec)
+        calculated = calculated[:2].reshape(1, -1) / calculated[2]
+        actual = x[i].reshape(1, -1)
+        diff = calculated - actual
+        if np.any([k>threshold for k in diff]):
+            print('actual and calculated values are not equal')
+            print('actual:', actual, 'calculated:', calculated)
+            break
+    else:
+        print('actual and calculated values are equal')
+
 def cameraProjection():
     world_file = 'res/world.txt'
     image_file = 'res/image.txt'
@@ -49,13 +66,9 @@ def cameraProjection():
                 writeIt = [str(k) for k in writeIt]
                 handle.write(', '.join(writeIt) + '\n')
 
-    for i in range(10):
-        vec = list(X[i])
-        vec.append(1)
-        vec = np.array(vec).reshape(4, 1)
-        res = P.dot(vec)
-        res = res.reshape(1, 3)
-        res = res / res[0][2]
+    # Verify your answer by re-projecting the world points X and checking
+    # that they are close to x
+    verify(X, P, x)
 
 
 if __name__ == '__main__':
