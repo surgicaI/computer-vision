@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import scipy.linalg as sci_linalg
 
 def verify(X, P, x):
     threshold = 1e-5
@@ -51,7 +52,7 @@ def cameraProjection():
     # corresponding to the smallest singular value of A. To find this, compute
     # the SVD of A, picking this eigenvector and reshaping it into a 3 by 4
     # matrix P.
-    my_min = 2**64
+    my_min = 2**64 # maximum value of integer
     for index, val in enumerate(s):
         if val < my_min:
             my_min = val
@@ -69,6 +70,36 @@ def cameraProjection():
     # Verify your answer by re-projecting the world points X and checking
     # that they are close to x
     verify(X, P, x)
+
+    # Compute the SVD of P and pick the vector corresponding to this
+    # null-space. Finally, convert it back to inhomogeneous coordinates and to
+    # yield the (X,Y,Z) coordinates.
+    u,s,v=np.linalg.svd(P)
+    # Because C lies in the right null space of P. PC=0
+    C=np.array(v[3,:])
+    x=C[0]/C[3]
+    y=C[1]/C[3]
+    z=C[2]/C[3]
+
+    print("world coordinates of the projection center of the camera C(x,y,z):")
+    print(x,y,z)
+    if not os.path.isfile('C.txt'):
+        print('writing C in C.txt')
+        np.savetxt('C.txt', [x,y,z], delimiter=',', fmt="%s")
+
+    #  Since K is upper triangular, use a RQdecomposition
+    # to factor KR into the intrinsic parameters K and a rotation matrix
+    # R. Then solve for C˜. Check that your answer agrees with the solution from
+    # the first method.
+    K,R = sci_linalg.rq(P, mode="economic")
+    t = R[:,3]
+    r = -1*R[:,0:3]
+    # t = -RC
+    C_New = np.linalg.solve(r, t)
+    # C_New = np.linalg.solve(-1*R[:,0:3], R[:,3].reshape(-1,1))
+    print("Verify value of C from both the methods")
+    print('method 1, C:', "[{0:.1f} {1:.1f} {2:.1f}]".format(x,y,z))
+    print('method 2, C:', C_New)
 
 
 if __name__ == '__main__':

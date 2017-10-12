@@ -40,9 +40,6 @@ print(M[0:2])
 print("First 10 coordinates")
 print(np.transpose(v[0:3])[0:10])
 
-#Below code takes some time .. message for the same
-print("It take some time to show up ..")
-
 #Plotting coordinates
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
