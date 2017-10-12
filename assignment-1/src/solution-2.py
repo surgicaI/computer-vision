@@ -1,4 +1,4 @@
-import cv2, os, copy, random
+import cv2, os, copy, random, math
 import numpy as np
 
 # generates 3 random numbers from 0 to n-1
@@ -10,9 +10,11 @@ def generateRandomNums(n):
             result.add(m)
     return list(result)
 
+LOGS_ENABLED = False
+
 # reading input images and saving them respectively to image1 and image2
-image1  = cv2.imread('res/scene.pgm')
-image2  = cv2.imread('res/book.pgm')
+image1  = cv2.imread('res/book.pgm')
+image2  = cv2.imread('res/scene.pgm')
 
 # computing sift keypoints
 sift = cv2.xfeatures2d.SIFT_create()
@@ -63,16 +65,20 @@ if not os.path.isfile(file_3):
 # RANSAC
 N = 100
 P = 3
+num_inliers_max = 0
 for i in range(N):
     x, y, z = generateRandomNums(len(result_matches))
-    print(x, y, z)
+    if LOGS_ENABLED:
+        print(x, y, z)
     P_matches = [result_matches[x], result_matches[y], result_matches[z]]
 
     #Matrix Construction  A and b
     A = np.zeros(shape=(6,6))
     b = np.zeros(shape=(6,1))
     for i in range(P):
-        kp1, kp2 = P_matches[i]
+        desc1_idx = P_matches[i].queryIdx
+        desc2_idx = P_matches[i].trainIdx
+        kp1, kp2 = kp_image1[desc1_idx].pt, kp_image2[desc2_idx].pt
         A[2*i][0]=kp1[0]
         A[2*i][1]=kp1[1]
         A[2*i][4]=1
@@ -82,10 +88,76 @@ for i in range(N):
         b[2*i][0]=kp2[0]
         b[2*i+1][0]=kp2[1]
 
-    # Solving A,b using linear algebra api, q is the resultant transformation matrix
+    # Solve for the unknown transformation parameters q. In Matlab you
+    # can use the \ command. In Python you can use linalg.solve.
     try:
         q = np.linalg.solve(A,b)
-    except np.linalg.LinAlgError: #if A is singular
+    except np.linalg.LinAlgError:
+        print('A is singular')
         continue
 
-    # print(q)
+    if LOGS_ENABLED:
+        print(q)
+
+    # Using the transformation parameters, transform the locations of all T
+    # points in image 1. If the transformation is correct, they should lie close
+    # to their pairs in image 2.
+    # Count the number of inliers, inliers being defined as the number of
+    # transformed points from image 1 that lie within a radius of 10 pixels
+    # of their pair in image 2.
+    num_inliers=0
+    inliers=[]
+    for match in result_matches:
+        kp1 = kp_image1[match.queryIdx].pt
+        kp2 = kp_image2[match.trainIdx].pt
+        x = np.zeros(shape=(2,6))
+        x[0][0]=kp1[0]
+        x[0][1]=kp1[1]
+        x[0][4]=1
+        x[1][2]=kp1[0]
+        x[1][3]=kp1[1]
+        x[1][5]=1
+        R=np.dot(x,q)
+        if(math.hypot(R[0][0] - kp2[0], R[1][0] - kp2[1])<10):
+            num_inliers = num_inliers + 1
+            inliers.append([kp1,kp2])
+
+    # If this count exceeds the best total so far, save the transformation
+    # parameters and the set of inliers.
+    if(num_inliers >= num_inliers_max):
+        transformation = q
+        inliers_set = inliers
+        num_inliers_max = num_inliers
+
+# Perform a final refit using the set of inliers belonging to the best transformation
+# you found. This refit should use all inliers, not just 3 points
+# chosen at random.
+A = np.zeros(shape=(2*len(inliers_set),6))
+b = np.zeros(shape=(2*len(inliers_set),1))
+for i in range(0,len(inliers_set)):
+    kp1,kp2 = inliers_set[i]
+    A[2*i][0] = kp1[0]
+    A[2*i][1] = kp1[1]
+    A[2*i][4] = 1
+    A[2*i+1][2] = kp1[0]
+    A[2*i+1][3] = kp1[1]
+    A[2*i+1][5] = 1
+    b[2*i][0] = kp2[0]
+    b[2*i+1][0] = kp2[1]
+q,residuals,rank,s = np.linalg.lstsq(A,b)
+transformation = q
+
+np.savetxt('out/image-alignment-transformation', transformation, delimiter=',')
+
+#Making homography matrix
+H = np.zeros(shape=(2,3))
+H[0][0]=transformation[0][0]
+H[0][1]=transformation[1][0]
+H[0][2]=transformation[4][0]
+H[1][0]=transformation[2][0]
+H[1][1]=transformation[3][0]
+H[1][2]=transformation[5][0]
+image1  = cv2.imread('res/book.pgm')
+rows, cols, _ = image1.shape
+affine_transform = cv2.warpAffine(image1,H,(rows,cols))
+cv2.imwrite('out/affine_transform.jpg',affine_transform)
