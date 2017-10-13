@@ -7,3 +7,4 @@ Simranjyot Singh Gill
 2. All the input will be read from **res** directory.
 3. All the output will be written to **out** directory(will be created if doesn't exist).
 4. Please use **python3** and **opencv3** to run the code.
+5. To run code using script, run `./script.sh` in this(src) directory.
