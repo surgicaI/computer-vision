@@ -33,18 +33,11 @@ if __name__ == '__main__':
         kernel_width = int(input('please input kernel width(odd natural number >= 3):'))
 
     # Applying multiple, successive Gaussian blurs to an image has the same effect as applying a single, larger Gaussian blur, whose radius is the square root of the sum of the squares of the blur radii that were actually applied.
-    # For example, applying successive Gaussian blurs with radii of 6 and 8 gives the same results as applying a single Gaussian blur of radius 10, since  (6^2 + 8^2)^0.5 = 10.
-    # initial radius of gausian kernel = sigma
-    # after 2 iterations radius = (1^2 + 1^2)^0.5 signma = 2^0.5 sigma
-    # after 3 iterations, radius = (2^(0.5*2) + 1^2) sigma = 3^0.5 sigma
-    # after n iterations, radius = n^0.5 sigma
-    # kernel_width = 2*radius + 1
-    # in our case sigma = 1
-    num_iterations = ((kernel_width - 1) / 2)**2
+    print('input-image-shape:', image.shape)
+    num_iterations = ((kernel_width - 1) / 2)
     num_iterations = int(num_iterations)
-    print('num_iterations:', num_iterations)
     for _ in range(num_iterations):
         image = convolve(image)
-
+    print('output-image-shape:', image.shape)
     plt.imshow(image, cmap='Greys_r')
     plt.show()
