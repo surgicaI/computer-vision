@@ -38,9 +38,9 @@ def cameraProjection():
         A.append(a2)
 
     A = np.array(A)
-    if not os.path.isfile('A.txt'):
-        print('writing A in A.txt')
-        with open('A.txt', 'w+') as handle:
+    if not os.path.isfile('out/A.txt'):
+        print('writing A in out/A.txt')
+        with open('out/A.txt', 'w+') as handle:
             for i in range(20):
                 writeIt = list(A[i])
                 writeIt = [str(k) for k in writeIt]
@@ -59,9 +59,9 @@ def cameraProjection():
             P = V[index]
     P = P.reshape(3, 4)
 
-    if not os.path.isfile('P.txt'):
-        print('writing P in P.txt')
-        with open('P.txt', 'w+') as handle:
+    if not os.path.isfile('out/P.txt'):
+        print('writing P in out/P.txt')
+        with open('out/P.txt', 'w+') as handle:
             for i in range(3):
                 writeIt = list(P[i])
                 writeIt = [str(k) for k in writeIt]
@@ -83,9 +83,9 @@ def cameraProjection():
 
     print("world coordinates of the projection center of the camera C(x,y,z):")
     print(x,y,z)
-    if not os.path.isfile('C.txt'):
-        print('writing C in C.txt')
-        np.savetxt('C.txt', [x,y,z], delimiter=',', fmt="%s")
+    if not os.path.isfile('out/C.txt'):
+        print('writing C in out/C.txt')
+        np.savetxt('out/C.txt', [x,y,z], delimiter=',', fmt="%s")
 
     #  Since K is upper triangular, use a RQdecomposition
     # to factor KR into the intrinsic parameters K and a rotation matrix
