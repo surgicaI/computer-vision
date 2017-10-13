@@ -157,6 +157,8 @@ H[0][2]=transformation[4][0]
 H[1][0]=transformation[2][0]
 H[1][1]=transformation[3][0]
 H[1][2]=transformation[5][0]
+print("Matrix H")
+print(H)
 image1  = cv2.imread('res/book.pgm')
 rows, cols, _ = image1.shape
 affine_transform = cv2.warpAffine(image1,H,(rows,cols))
