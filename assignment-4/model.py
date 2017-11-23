@@ -12,12 +12,14 @@ class Net(nn.Module):
         output_channels_conv_layer_1 = 16
         output_channels_conv_layer_2 = 128
         num_units_hidden_layer_1 = output_channels_conv_layer_2 * 5 * 5
-        num_units_hidden_layer_2 = 64
+        num_units_hidden_layer_2 = 500
+        num_units_hidden_layer_3 = 64
         self.conv1 = nn.Conv2d(input_channels, output_channels_conv_layer_1, kernel_size=kernel_size)
         self.conv2 = nn.Conv2d(output_channels_conv_layer_1, output_channels_conv_layer_2, kernel_size=kernel_size)
         self.conv2_drop = nn.Dropout2d()
         self.fc1 = nn.Linear(num_units_hidden_layer_1, num_units_hidden_layer_2)
-        self.fc2 = nn.Linear(num_units_hidden_layer_2, nclasses)
+        self.fc2 = nn.Linear(num_units_hidden_layer_2, num_units_hidden_layer_3)
+        self.fc3 = nn.Linear(num_units_hidden_layer_3, nclasses)
 
     def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
@@ -25,7 +27,9 @@ class Net(nn.Module):
         x = x.view(-1, self.num_flat_features(x))
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
-        x = self.fc2(x)
+        x = F.relu(self.fc2(x))
+        x = F.dropout(x, training=self.training)
+        x = self.fc3(x)
         return F.log_softmax(x)
 
     def num_flat_features(self, x):
