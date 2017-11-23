@@ -11,11 +11,13 @@ class Net(nn.Module):
         input_channels = 3
         output_channels_conv_layer_1 = 16
         output_channels_conv_layer_2 = 128
+        output_channels_conv_layer_3 = 128
         num_units_hidden_layer_1 = output_channels_conv_layer_2 * 5 * 5
         num_units_hidden_layer_2 = 500
         num_units_hidden_layer_3 = 64
         self.conv1 = nn.Conv2d(input_channels, output_channels_conv_layer_1, kernel_size=kernel_size)
         self.conv2 = nn.Conv2d(output_channels_conv_layer_1, output_channels_conv_layer_2, kernel_size=kernel_size)
+        self.conv3 = nn.Conv2d(output_channels_conv_layer_2, output_channels_conv_layer_3, kernel_size=kernel_size, padding=2)
         self.conv2_drop = nn.Dropout2d()
         self.fc1 = nn.Linear(num_units_hidden_layer_1, num_units_hidden_layer_2)
         self.fc2 = nn.Linear(num_units_hidden_layer_2, num_units_hidden_layer_3)
@@ -24,6 +26,7 @@ class Net(nn.Module):
     def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
+        x = F.relu(self.conv3(x))
         x = x.view(-1, self.num_flat_features(x))
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
