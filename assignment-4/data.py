@@ -18,9 +18,9 @@ data_transforms = transforms.Compose([
 def initialize_data(folder):
     train_zip = folder + '/train_images.zip'
     test_zip = folder + '/test_images.zip'
-    if not os.path.exists(train_zip) or not os.path.exists(test_zip):
-        raise(RuntimeError("Could not find " + train_zip + " and " + test_zip
-              + ', please download them from https://www.kaggle.com/c/nyu-cv-fall-2017/data '))
+    # if not os.path.exists(train_zip) or not os.path.exists(test_zip):
+    #     raise(RuntimeError("Could not find " + train_zip + " and " + test_zip
+    #           + ', please download them from https://www.kaggle.com/c/nyu-cv-fall-2017/data '))
     # extract train_data.zip to train_data
     train_folder = folder + '/train_images'
     if not os.path.isdir(train_folder):
